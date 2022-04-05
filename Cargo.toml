@@ -1,0 +1,13 @@
+[package]
+name = "void"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+serde = { version = "1.0.136", features = [ "derive" ] }
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "mysql" ] }
+tokio = { version = "1.17.0", features = [ "full" ] }
+warp = "0.3.2"

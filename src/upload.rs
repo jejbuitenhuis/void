@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::io::Read;
 use warp::Buf;
 use crate::Database;
@@ -28,17 +29,17 @@ pub async fn handle_upload(db: Database, form: FormData) -> Result<impl Reply, R
 						.map( |b| b.unwrap() )
 						.collect::< Vec<u8> >();
 
-					let mimetype = match dbg!( infer::get( &data ) ) {
-						Some(m) => m.mime_type(),
+					let mimetype = match dbg!( mime_guess::from_path( &Path::new(&filename) ) ).first() {
+						Some(m) => m.to_string(),
 						None => match part.content_type() {
-							Some(t) => t,
-							None => "text/plain",
+							Some(t) => t.to_string(),
+							None => "text/plain".to_string(), // TODO: this is incorrect most of the time
 						},
 					};
 
 					let parsed = Upload{
 						filename,
-						mimetype: String::from(mimetype),
+						mimetype,
 						data,
 					};
 

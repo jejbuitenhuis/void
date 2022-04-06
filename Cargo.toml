@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 
+askama = "0.11.1"
 dotenv = "0.15.0"
 serde = { version = "1.0.136", features = [ "derive" ] }
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "mysql" ] }

@@ -1,9 +1,12 @@
+use askama::Template;
 use crate::database::Database;
+use crate::pages::home::HomePage;
 use std::convert::Infallible;
 use serde::Serialize;
 use warp::Filter;
 
 mod database;
+mod pages;
 
 #[derive(Serialize)]
 struct Hello<'a> {
@@ -20,31 +23,17 @@ async fn main() {
 	let database = Database::new(database_url).await;
 
 	let endpoints = {
-		let hello = warp::get()
+		let home = warp::get()
 			.and( warp::path::end() )
 			.and_then(|| async {
-				let obj = Hello{ hello: "world" };
-
 				Ok::<_, Infallible>(
-					warp::reply::json(&obj)
+					warp::reply::html(
+						HomePage{}.render().unwrap()
+					)
 				)
 			});
 
-		let test = warp::get()
-			.and( with_database( database.clone() ) )
-			.and( warp::path::path("test") )
-			.and( warp::path::end() )
-			.and_then(|db: Database| async move {
-				let result = db.get_test() .await
-					.expect("Something went wrong while getting the test rows");
-
-				Ok::<_, Infallible>(
-					warp::reply::json(&result)
-				)
-			});
-
-		hello
-			.or(test)
+		home
 	};
 
 	warp::serve(endpoints)

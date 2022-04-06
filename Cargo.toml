@@ -9,6 +9,9 @@ edition = "2021"
 
 askama = "0.11.1"
 dotenv = "0.15.0"
+infer = "0.7.0"
+futures = "0.3.21"
+# mime_guess = "2.0.4"
 serde = { version = "1.0.136", features = [ "derive" ] }
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "mysql" ] }
 tokio = { version = "1.17.0", features = [ "full" ] }

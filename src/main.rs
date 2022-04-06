@@ -1,24 +1,26 @@
-use askama::Template;
+use warp::Filter;
+use crate::upload::handle_upload;
 use crate::database::Database;
 use crate::pages::home::HomePage;
+use askama::Template;
 use std::convert::Infallible;
-use serde::Serialize;
-use warp::Filter;
 
 mod database;
+mod upload;
 mod pages;
 
-#[derive(Serialize)]
-struct Hello<'a> {
-	hello: &'a str,
-}
-
-fn with_database(database: Database) -> impl Filter<Extract = (Database,), Error = Infallible> + Clone {
-	warp::any().map( move || database.clone() )
+fn with_database(
+	database: Database,
+) -> impl Filter<Extract = (Database,), Error = Infallible> + Clone {
+	warp::any().map(move || database.clone())
 }
 
 #[tokio::main]
 async fn main() {
+	let max_upload_size = dotenv::var("MAX_UPLOAD_SIZE")
+		.unwrap_or("536870912".to_string()) // 512 MiB
+		.parse::<u64>()
+		.unwrap();
 	let database_url = dotenv::var("DATABASE_URL").unwrap();
 	let database = Database::new(database_url).await;
 
@@ -28,15 +30,20 @@ async fn main() {
 			.and_then(|| async {
 				Ok::<_, Infallible>(
 					warp::reply::html(
-						HomePage{}.render().unwrap()
+						HomePage {}.render().unwrap()
 					)
 				)
 			});
 
-		home
+		let upload = warp::post()
+			.and( with_database( database.clone() ) )
+			.and( warp::path::end() )
+			.and( warp::multipart::form().max_length(max_upload_size) )
+			.and_then(handle_upload);
+
+		home.or(upload)
 	};
 
 	warp::serve(endpoints)
-		.run( ( [ 127, 0, 0, 1 ], 8080 ) )
-		.await;
+		.run(([127, 0, 0, 1], 8080)).await;
 }

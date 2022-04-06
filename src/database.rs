@@ -19,18 +19,14 @@ impl Database {
 		let pool = MySqlPoolOptions::new()
 			.max_connections(5)
 			.connect( url.as_str() )
-			.await.expect("Failed to connect to the database");
+			.await
+			.expect("Failed to connect to the database");
 
-		Database {
-			pool,
-		}
+		Database { pool }
 	}
 
 	pub async fn get_test(&self) -> Result< Vec<Test>, sqlx::Error > {
-		sqlx::query_as!(
-			Test,
-			"SELECT * FROM Test"
-		)
+		sqlx::query_as!(Test, "SELECT * FROM Test")
 			.fetch_all(&self.pool)
 			.await
 	}

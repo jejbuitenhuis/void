@@ -29,12 +29,12 @@ pub async fn handle_upload(db: Database, form: FormData) -> Result<impl Reply, R
 						.map( |b| b.unwrap() )
 						.collect::< Vec<u8> >();
 
-					let mimetype = match dbg!( mime_guess::from_path( &Path::new(&filename) ) ).first() {
-						Some(m) => m.to_string(),
-						None => match part.content_type() {
-							Some(t) => t.to_string(),
-							None => "text/plain".to_string(), // TODO: this is incorrect most of the time
-						},
+					let mimetype = part.content_type();
+
+					let mimetype = if mimetype.is_none() || mimetype.unwrap() == "application/octet-stream" {
+						tree_magic::from_u8(&data)
+					} else {
+						mimetype.unwrap().to_string()
 					};
 
 					let parsed = Upload{

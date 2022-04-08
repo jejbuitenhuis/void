@@ -1,10 +1,12 @@
 use warp::Filter;
+use crate::base64::Base64;
 use crate::upload::handle_upload;
 use crate::database::Database;
 use crate::pages::home::HomePage;
 use askama::Template;
 use std::convert::Infallible;
 
+mod base64;
 mod database;
 mod upload;
 mod pages;
@@ -25,6 +27,18 @@ async fn main() {
 	let database = Database::new(database_url).await;
 
 	let endpoints = {
+		let test = warp::path!("test")
+			.and_then(|| async {
+				let encoded = Base64::encode(1234567890);
+				let decoded = Base64::decode( "SLglJB".to_string() ).unwrap();
+
+				Ok::<_, Infallible>(
+					warp::reply::html(
+						format!("<p>{}</p><p>{}</p>", encoded, decoded)
+					)
+				)
+			});
+
 		let home = warp::get()
 			.and( warp::path::end() )
 			.and_then(|| async {
@@ -41,7 +55,9 @@ async fn main() {
 			.and( warp::multipart::form().max_length(max_upload_size) )
 			.and_then(handle_upload);
 
-		home.or(upload)
+		home
+			.or(upload)
+			.or(test)
 	};
 
 	warp::serve(endpoints)

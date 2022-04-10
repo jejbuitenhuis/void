@@ -1,7 +1,10 @@
 use serde::Serialize;
-use sqlx::mysql::MySqlPoolOptions;
-use sqlx::MySql;
-use sqlx::Pool;
+use sqlx::{
+	MySql, Pool,
+	mysql::MySqlPoolOptions,
+};
+
+use crate::upload::Upload;
 
 #[derive(Clone)]
 pub struct Database {
@@ -25,9 +28,16 @@ impl Database {
 		Database { pool }
 	}
 
-	pub async fn get_test(&self) -> Result< Vec<Test>, sqlx::Error > {
-		sqlx::query_as!(Test, "SELECT * FROM Test")
-			.fetch_all(&self.pool)
-			.await
+	pub async fn upload_file(&self, file: &Upload) -> Result<u64, sqlx::Error> {
+		let result = sqlx::query!(
+			"INSERT INTO File (filename, extension, mime_type) VALUES (?, ?, ?)",
+			file.filename,
+			file.extension,
+			file.mime_type.to_string(),
+		)
+			.execute(&self.pool)
+			.await?;
+
+		Ok( result.last_insert_id() )
 	}
 }

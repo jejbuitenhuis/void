@@ -10,8 +10,11 @@ edition = "2021"
 askama = "0.11.1"
 dotenv = "0.15.0"
 futures = "0.3.21"
+hex = "0.4.3"
+mime = "0.3.16"
 tree_magic = "0.2.3"
 serde = { version = "1.0.136", features = [ "derive" ] }
+sha2 = "0.10.2"
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "mysql" ] }
 tokio = { version = "1.17.0", features = [ "full" ] }
 warp = "0.3.2"

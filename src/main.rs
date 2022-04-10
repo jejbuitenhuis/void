@@ -1,10 +1,16 @@
-use warp::Filter;
-use crate::base64::Base64;
-use crate::upload::handle_upload;
-use crate::database::Database;
-use crate::pages::home::HomePage;
 use askama::Template;
 use std::convert::Infallible;
+use warp::{
+	Filter, Rejection,
+	http::StatusCode
+};
+
+use crate::{
+	base64::Base64,
+	database::Database,
+	upload::handle_upload,
+	pages::home::HomePage,
+};
 
 mod base64;
 mod database;
@@ -20,7 +26,7 @@ fn with_database(
 #[tokio::main]
 async fn main() {
 	let max_upload_size = dotenv::var("MAX_UPLOAD_SIZE")
-		.unwrap_or("536870912".to_string()) // 512 MiB
+		.unwrap_or( "536870912".to_string() ) // 512 MiB
 		.parse::<u64>()
 		.unwrap();
 	let database_url = dotenv::var("DATABASE_URL").unwrap();
@@ -53,11 +59,22 @@ async fn main() {
 			.and( with_database( database.clone() ) )
 			.and( warp::path::end() )
 			.and( warp::multipart::form().max_length(max_upload_size) )
-			.and_then(handle_upload);
+			.and_then(|db, form| async {
+				let uploaded_location = handle_upload(db, form).await?;
+
+				Ok::<_, Rejection>(
+					warp::reply::with_status(uploaded_location, StatusCode::OK)
+				)
+			});
 
 		home
 			.or(upload)
 			.or(test)
+			.recover(|err| async move {
+				eprintln!("Something went wrong, got a rejection: {:?}", err);
+
+				Ok::<_, Infallible>( warp::reply::reply() )
+			})
 	};
 
 	warp::serve(endpoints)

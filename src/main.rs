@@ -1,6 +1,6 @@
 use crate::common::get_upload_path;
 use askama::Template;
-use std::{convert::Infallible, path::Path, fs::File};
+use std::convert::Infallible;
 use warp::{
 	Filter, Rejection,
 	http::StatusCode, hyper::Response
@@ -37,20 +37,6 @@ async fn main() {
 	let database = Database::new(database_url).await;
 
 	let endpoints = {
-		let test = warp::get()
-			.and( warp::path::path("test") )
-			.and( warp::path::end() )
-			.and_then(|| async {
-				let encoded = Base64::encode(1234567890);
-				let decoded = Base64::decode( "SLglJB".to_string() ).unwrap();
-
-				Ok::<_, Infallible>(
-					warp::reply::html(
-						format!("<p>{}</p><p>{}</p>", encoded, decoded)
-					)
-				)
-			});
-
 		let home = warp::get()
 			.and( warp::path::end() )
 			.and_then(|| async {
@@ -66,8 +52,7 @@ async fn main() {
 			.and( warp::path::param() ) // file name
 			.and( warp::path::end() )
 			.and_then(|db, requested_file: String| async {
-				let file = get_file(db, dbg!(requested_file)).await?;
-				dbg!(&file);
+				let file = get_file(db, requested_file).await?;
 
 				let response = Response::builder()
 					.status(StatusCode::OK)
@@ -76,7 +61,7 @@ async fn main() {
 					.body("")
 					.expect("Error unwrapping response");
 
-				Ok::<_, Rejection>(dbg!(response))
+				Ok::<_, Rejection>(response)
 			});
 
 		let upload = warp::post()
@@ -94,7 +79,6 @@ async fn main() {
 		home
 			.or(retrieve)
 			.or(upload)
-			.or(test)
 			.recover(|err: Rejection| async move {
 				eprintln!("Something went wrong, got a rejection: {:?}", err);
 

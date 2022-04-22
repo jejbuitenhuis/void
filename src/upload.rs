@@ -10,7 +10,10 @@ use warp::{
 	multipart::FormData,
 };
 
-use crate::{Base64, Database};
+use crate::{
+	Base64, Database,
+	common::get_upload_path
+};
 
 #[derive(Debug)]
 pub struct Upload {
@@ -86,10 +89,7 @@ pub async fn handle_upload(db: Database, form: FormData) -> Result<String, Rejec
 		},
 	};
 
-	let upload_location = dotenv::var("UPLOAD_FOLDER")
-		.unwrap_or( "./uploaded_files/".to_string() );
-
-	let upload_path = Path::new(&upload_location).join(&uploaded_file.filename);
+	let upload_path = Path::new( &get_upload_path() ).join(&uploaded_file.filename);
 
 	let file = File::options()
 		.create_new(true)

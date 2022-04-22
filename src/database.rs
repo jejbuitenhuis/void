@@ -4,7 +4,10 @@ use sqlx::{
 	mysql::MySqlPoolOptions,
 };
 
-use crate::upload::Upload;
+use crate::{
+	download::File,
+	upload::Upload,
+};
 
 #[derive(Clone)]
 pub struct Database {
@@ -26,6 +29,18 @@ impl Database {
 			.expect("Failed to connect to the database");
 
 		Database { pool }
+	}
+
+	pub async fn get_file_information(&self, file_id: u64) -> Result< Option<File>, sqlx::Error > {
+		let result = sqlx::query_as!(
+			File,
+			"SELECT filename, extension, mime_type FROM File WHERE id = ?",
+			file_id
+		)
+			.fetch_optional(&self.pool)
+			.await?;
+
+		Ok(result)
 	}
 
 	pub async fn upload_file(&self, file: &Upload) -> Result<u64, sqlx::Error> {

@@ -1,19 +1,23 @@
+use crate::common::get_upload_path;
 use askama::Template;
-use std::convert::Infallible;
+use std::{convert::Infallible, path::Path, fs::File};
 use warp::{
 	Filter, Rejection,
-	http::StatusCode
+	http::StatusCode, hyper::Response
 };
 
 use crate::{
 	base64::Base64,
 	database::Database,
+	download::get_file,
 	upload::handle_upload,
 	pages::home::HomePage,
 };
 
 mod base64;
+mod common;
 mod database;
+mod download;
 mod upload;
 mod pages;
 
@@ -33,7 +37,9 @@ async fn main() {
 	let database = Database::new(database_url).await;
 
 	let endpoints = {
-		let test = warp::path!("test")
+		let test = warp::get()
+			.and( warp::path::path("test") )
+			.and( warp::path::end() )
 			.and_then(|| async {
 				let encoded = Base64::encode(1234567890);
 				let decoded = Base64::decode( "SLglJB".to_string() ).unwrap();
@@ -55,6 +61,24 @@ async fn main() {
 				)
 			});
 
+		let retrieve = warp::get()
+			.and( with_database( database.clone() ) )
+			.and( warp::path::param() ) // file name
+			.and( warp::path::end() )
+			.and_then(|db, requested_file: String| async {
+				let file = get_file(db, dbg!(requested_file)).await?;
+				dbg!(&file);
+
+				let response = Response::builder()
+					.status(StatusCode::OK)
+					.header("Content-Type", file.mime_type)
+					.header( "X-Accel-Redirect", format!("/{}/{}", get_upload_path(), file.filename) )
+					.body("")
+					.expect("Error unwrapping response");
+
+				Ok::<_, Rejection>(dbg!(response))
+			});
+
 		let upload = warp::post()
 			.and( with_database( database.clone() ) )
 			.and( warp::path::end() )
@@ -68,12 +92,13 @@ async fn main() {
 			});
 
 		home
+			.or(retrieve)
 			.or(upload)
 			.or(test)
-			.recover(|err| async move {
+			.recover(|err: Rejection| async move {
 				eprintln!("Something went wrong, got a rejection: {:?}", err);
 
-				Ok::<_, Infallible>( warp::reply::reply() )
+				Ok::<_, Infallible>( warp::reply::html("<p>Something went wrong :(</p>") )
 			})
 	};
 

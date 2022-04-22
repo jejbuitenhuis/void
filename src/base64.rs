@@ -48,7 +48,7 @@ impl Base64 {
 			let index = match Base64::index_of_char(char) {
 				Some(c) => c,
 				None => return Err(
-					String::from("Invalid character found in supplied string")
+					format!("Invalid character found in supplied string ('{}')", char)
 				),
 			};
 

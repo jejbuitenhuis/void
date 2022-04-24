@@ -1,0 +1,69 @@
+:root {
+	--background: #0d0d0d;
+	--background-dimmed: #181818;
+	--foreground: #ffe3ff;
+	--foreground-dimmed: #333333;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	background-color: var(--background);
+	color: var(--foreground);
+}
+
+div.viewer {
+	width: 60vw;
+	margin: 1em auto;
+	border: .1em solid var(--foreground-dimmed);
+	border-radius: .3em;
+	overflow: hidden;
+}
+
+/* header {{{ */
+div.viewer div.header {
+	display: flex;
+	direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: .75em 1em;
+	background-color: var(--background-dimmed);
+	border-bottom: .1em solid var(--foreground-dimmed);
+}
+
+div.header div#download {
+	display: flex;
+	direction: row;
+	align-items: center;
+	gap: 1em;
+}
+
+div.header div#download p.type {
+	opacity: .75;
+}
+
+div.header div#download a.download-link {
+	padding: .25em .5em;
+	background-color: inherit;
+	color: inherit;
+	border: .1em solid var(--foreground-dimmed);
+	border-radius: .3em;
+	text-decoration: none;
+	transition: background-color .3s ease;
+}
+
+div.header div#download a.download-link:hover {
+	background-color: var(--background);
+}
+/* }}} */
+
+
+/* content {{{ */
+div.viewer div.content {
+	padding: 1em;
+}
+/* }}} */

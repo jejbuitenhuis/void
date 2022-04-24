@@ -1,17 +1,19 @@
+use crate::download::parse_query_string;
+use crate::download::get_retrieve_response;
 use crate::common::get_upload_path;
 use askama::Template;
 use std::convert::Infallible;
 use warp::{
 	Filter, Rejection,
-	http::StatusCode, hyper::Response
+	http::StatusCode,
 };
 
 use crate::{
 	base64::Base64,
 	database::Database,
-	download::get_file,
 	upload::handle_upload,
-	pages::home::HomePage,
+	download::{get_file, RetrieveQuery},
+	pages::home::{HomePage},
 };
 
 mod base64;
@@ -37,6 +39,9 @@ async fn main() {
 	let database = Database::new(database_url).await;
 
 	let endpoints = {
+		let assets = warp::path("assets")
+			.and( warp::fs::dir("./assets") );
+
 		let home = warp::get()
 			.and( warp::path::end() )
 			.and_then(|| async {
@@ -51,15 +56,11 @@ async fn main() {
 			.and( with_database( database.clone() ) )
 			.and( warp::path::param() ) // file name
 			.and( warp::path::end() )
-			.and_then(|db, requested_file: String| async {
+			.and( warp::query::<RetrieveQuery>() )
+			.and_then(|db, requested_file: String, query_string: RetrieveQuery| async move {
+				let do_view_file = parse_query_string(query_string);
 				let file = get_file(db, requested_file).await?;
-
-				let response = Response::builder()
-					.status(StatusCode::OK)
-					.header("Content-Type", file.mime_type)
-					.header( "X-Accel-Redirect", format!("/{}/{}", get_upload_path(), file.filename) )
-					.body("")
-					.expect("Error unwrapping response");
+				let response = get_retrieve_response(file, do_view_file)?;
 
 				Ok::<_, Rejection>(response)
 			});
@@ -76,7 +77,8 @@ async fn main() {
 				)
 			});
 
-		home
+		assets
+			.or(home)
 			.or(retrieve)
 			.or(upload)
 			.recover(|err: Rejection| async move {

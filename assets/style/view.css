@@ -17,7 +17,7 @@ body {
 }
 
 div.viewer {
-	width: 60vw;
+	width: 90vw;
 	margin: 1em auto;
 	border: .1em solid var(--foreground-dimmed);
 	border-radius: .3em;
@@ -63,7 +63,14 @@ div.header div#download a.download-link:hover {
 
 
 /* content {{{ */
-div.viewer div.content {
+div.viewer div#content {
 	padding: 1em;
+	font-family: monospace;
+	white-space: pre;
+}
+
+div.viewer div#content table td.row-number {
+	padding-right: .5em;
+	text-align: right;
 }
 /* }}} */

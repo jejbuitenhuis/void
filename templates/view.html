@@ -17,9 +17,7 @@
 			</div>
 		</div>
 
-		<div class="content">
-			<pre aria-label="Content of the file">{{ file_content }}</pre>
-		</div>
+		<div id="content" aria-label="Content of the file">{{ file_content }}</div>
 	</div>
 
 	<script>
@@ -32,5 +30,6 @@
 
 		document.getElementById("download").append(downloadLink);
 	</script>
+	<script src="/assets/scripts/viewer.js"></script>
 </body>
 </html>

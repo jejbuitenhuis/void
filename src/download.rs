@@ -1,21 +1,29 @@
 use std::path::Path;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use warp::Rejection;
 use crate::{
 	Base64, Database,
 };
+
+#[derive(Debug, Deserialize)]
+pub struct RetrieveQuery {
+	pub pass: String,
+}
 
 #[derive(sqlx::FromRow, Serialize, Debug)]
 pub struct File {
 	pub filename: String,
 	pub extension: Option<String>,
 	pub mime_type: String,
+	pub password: String,
 }
 
-pub async fn get_file(db: Database, requested_file: String) -> Result<File, Rejection> {
+pub async fn get_file(db: Database, requested_file: String, given_password: String) -> Result<File, Rejection> {
 	let path = Path::new(&requested_file);
 	let filename = match path.file_stem() {
-		Some(f) => f.to_str().expect("Error unwrapping OsStr to str").to_string(),
+		Some(f) => f.to_str()
+			.expect("Error unwrapping OsStr to str")
+			.to_string(),
 		None => {
 			println!("Error while extracting filename");
 			return Err( warp::reject::reject() );
@@ -42,6 +50,11 @@ pub async fn get_file(db: Database, requested_file: String) -> Result<File, Reje
 			return Err( warp::reject::reject() );
 		}
 	};
+
+	if file.password != given_password {
+		println!("Incorrect password given for file \"{}\"", file.filename);
+		return Err( warp::reject::reject() );
+	}
 
 	Ok(file)
 }

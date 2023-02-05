@@ -1,3 +1,4 @@
+use crate::download::RetrieveQuery;
 use crate::common::get_upload_path;
 use askama::Template;
 use std::convert::Infallible;
@@ -51,8 +52,9 @@ async fn main() {
 			.and( with_database( database.clone() ) )
 			.and( warp::path::param() ) // file name
 			.and( warp::path::end() )
-			.and_then(|db, requested_file: String| async {
-				let file = get_file(db, requested_file).await?;
+			.and( warp::query::<RetrieveQuery>() )
+			.and_then(|db, requested_file: String, query: RetrieveQuery| async {
+				let file = get_file(db, requested_file, query.pass).await?;
 
 				let response = Response::builder()
 					.status(StatusCode::OK)

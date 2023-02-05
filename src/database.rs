@@ -34,7 +34,7 @@ impl Database {
 	pub async fn get_file_information(&self, file_id: u64) -> Result< Option<File>, sqlx::Error > {
 		let result = sqlx::query_as!(
 			File,
-			"SELECT filename, extension, mime_type FROM File WHERE id = ?",
+			"SELECT filename, extension, mime_type, password FROM File WHERE id = ?",
 			file_id
 		)
 			.fetch_optional(&self.pool)
@@ -45,10 +45,11 @@ impl Database {
 
 	pub async fn upload_file(&self, file: &Upload) -> Result<u64, sqlx::Error> {
 		let result = sqlx::query!(
-			"INSERT INTO File (filename, extension, mime_type) VALUES (?, ?, ?)",
+			"INSERT INTO File (filename, extension, mime_type, password) VALUES (?, ?, ?, ?)",
 			file.filename,
 			file.extension,
 			file.mime_type.to_string(),
+			file.password,
 		)
 			.execute(&self.pool)
 			.await?;
